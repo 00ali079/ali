@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم مدیریت چک بانکی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @font-face {
+            font-family: 'Vazir';
+            src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            font-family: 'Vazir', sans-serif;
+            background-color: #f0f9ff;
+        }
+        .number-to-persian {
+            direction: rtl;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-800 mb-2">سیستم مدیریت چک بانکی</h1>
+            <p class="text-gray-600">ثبت و مدیریت چک‌های بانکی به همراه محاسبه میانگین پس‌انداز</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-indigo-700 mb-4">ثبت چک جدید</h2>
+            <form id="checkForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="date">تاریخ سررسید چک</label>
+                        <input type="date" id="date" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="amount">مبلغ چک (ریال)</label>
+                        <input type="number" id="amount" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="مثال: 10000000" required>
+                        <p id="amountInWords" class="mt-2 text-sm text-gray-600"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="issuer">صادر کننده چک</label>
+                        <input type="text" id="issuer" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="نام صادر کننده" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="receiver">دریافت کننده چک</label>
+                        <input type="text" id="receiver" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="نام دریافت کننده" required>
+                    </div>
+                </div>
+                <div class="flex justify-center">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition duration-300 shadow-md">
+                        ثبت چک
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-indigo-700 mb-4">لیست چک‌های ثبت شده</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr class="bg-indigo-100 text-indigo-800">
+                            <th class="py-3 px-4 text-right">ردیف</th>
+                            <th class="py-3 px-4 text-right">تاریخ سررسید</th>
+                            <th class="py-3 px-4 text-right">صادر کننده</th>
+                            <th class="py-3 px-4 text-right">دریافت کننده</th>
+                            <th class="py-3 px-4 text-right">مبلغ (ریال)</th>
+                            <th class="py-3 px-4 text-right">مبلغ به حروف</th>
+                            <th class="py-3 px-4 text-right">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="checksList">
+                        <!-- چک‌ها اینجا اضافه می‌شوند -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="noChecks" class="text-center py-4 text-gray-500">
+                هنوز چکی ثبت نشده است.
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-indigo-700 mb-4">آمار و تحلیل</h2>
+            <div id="statsContainer" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">تعداد کل چک‌ها</h3>
+                        <p id="totalChecks" class="text-2xl font-bold text-indigo-800">0</p>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">مجموع مبالغ</h3>
+                        <p id="totalAmount" class="text-2xl font-bold text-indigo-800">0 ریال</p>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">میانگین مبلغ چک‌ها</h3>
+                        <p id="averageAmount" class="text-2xl font-bold text-indigo-800">0 ریال</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="personStats" class="hidden mt-6 p-5 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="text-lg font-semibold text-blue-800 mb-4">آمار چک‌های مشترک</h3>
+                <div class="mb-3">
+                    <p class="font-medium text-blue-700">صادر کننده / دریافت کننده: <span id="personName" class="font-bold"></span></p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                        <h4 class="text-md font-semibold text-blue-700 mb-2">تعداد چک‌ها</h4>
+                        <p id="personTotalChecks" class="text-xl font-bold text-blue-800">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                        <h4 class="text-md font-semibold text-blue-700 mb-2">مجموع مبالغ</h4>
+                        <p id="personTotalAmount" class="text-xl font-bold text-blue-800">0 ریال</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                        <h4 class="text-md font-semibold text-blue-700 mb-2">پس‌انداز ماهانه مورد نیاز</h4>
+                        <p id="monthlySavings" class="text-xl font-bold text-blue-800">0 ریال</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // تبدیل عدد به حروف فارسی
+        const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        const yekan = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+        const dahgan = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+        const dah = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+        const sadgan = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+        const basex = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+
+        function numberToPersianWords(num) {
+            if (num === 0) return 'صفر';
+            
+            let result = '';
+            let base = 0;
+            
+            while (num > 0) {
+                const chunk = num % 1000;
+                if (chunk !== 0) {
+                    result = convertLessThanThousand(chunk) + (base > 0 ? ' ' + basex[base] + ' ' : '') + result;
+                }
+                num = Math.floor(num / 1000);
+                base++;
+            }
+            
+            return result.trim();
+        }
+
+        function convertLessThanThousand(num) {
+            let result = '';
+            
+            const hundreds = Math.floor(num / 100);
+            const remainder = num % 100;
+            
+            if (hundreds > 0) {
+                result += sadgan[hundreds];
+                if (remainder > 0) result += ' و ';
+            }
+            
+            if (remainder > 0) {
+                if (remainder < 10) {
+                    result += yekan[remainder];
+                } else if (remainder < 20) {
+                    result += dah[remainder - 10];
+                } else {
+                    const tens = Math.floor(remainder / 10);
+                    const ones = remainder % 10;
+                    
+                    result += dahgan[tens];
+                    if (ones > 0) {
+                        result += ' و ' + yekan[ones];
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        function toPersianDigits(n) {
+            return n.toString().replace(/\d/g, x => persianDigits[x]);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('fa-IR').format(num);
+        }
+
+        // مدیریت چک‌ها
+        let checks = [];
+
+        document.getElementById('amount').addEventListener('input', function() {
+            const amount = parseInt(this.value) || 0;
+            const amountInWords = amount > 0 ? numberToPersianWords(amount) + ' ریال' : '';
+            document.getElementById('amountInWords').textContent = amountInWords;
+        });
+
+        document.getElementById('checkForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('date').value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const issuer = document.getElementById('issuer').value.trim();
+            const receiver = document.getElementById('receiver').value.trim();
+            
+            if (!date || !amount || !issuer || !receiver) {
+                alert('لطفاً تمام فیلدها را پر کنید.');
+                return;
+            }
+            
+            const amountInWords = numberToPersianWords(amount) + ' ریال';
+            
+            const check = {
+                id: Date.now(),
+                date,
+                amount,
+                amountInWords,
+                issuer,
+                receiver
+            };
+            
+            checks.push(check);
+            renderChecks();
+            updateStats();
+            
+            // پاک کردن فرم
+            document.getElementById('checkForm').reset();
+            document.getElementById('amountInWords').textContent = '';
+        });
+
+        function renderChecks() {
+            const checksList = document.getElementById('checksList');
+            const noChecks = document.getElementById('noChecks');
+            
+            if (checks.length === 0) {
+                checksList.innerHTML = '';
+                noChecks.classList.remove('hidden');
+                return;
+            }
+            
+            noChecks.classList.add('hidden');
+            
+            checksList.innerHTML = checks.map((check, index) => `
+                <tr class="${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                    <td class="py-3 px-4">${toPersianDigits(index + 1)}</td>
+                    <td class="py-3 px-4">${new Date(check.date).toLocaleDateString('fa-IR')}</td>
+                    <td class="py-3 px-4">${check.issuer}</td>
+                    <td class="py-3 px-4">${check.receiver}</td>
+                    <td class="py-3 px-4">${formatNumber(check.amount)}</td>
+                    <td class="py-3 px-4">${check.amountInWords}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="deleteCheck(${check.id})" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm">
+                            حذف
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteCheck(id) {
+            checks = checks.filter(check => check.id !== id);
+            renderChecks();
+            updateStats();
+        }
+
+        function updateStats() {
+            const statsContainer = document.getElementById('statsContainer');
+            const personStats = document.getElementById('personStats');
+            
+            if (checks.length === 0) {
+                statsContainer.classList.add('hidden');
+                personStats.classList.add('hidden');
+                return;
+            }
+            
+            statsContainer.classList.remove('hidden');
+            
+            // آمار کلی
+            const totalChecks = checks.length;
+            const totalAmount = checks.reduce((sum, check) => sum + check.amount, 0);
+            const averageAmount = Math.round(totalAmount / totalChecks);
+            
+            document.getElementById('totalChecks').textContent = toPersianDigits(totalChecks);
+            document.getElementById('totalAmount').textContent = formatNumber(totalAmount) + ' ریال';
+            document.getElementById('averageAmount').textContent = formatNumber(averageAmount) + ' ریال';
+            
+            // بررسی چک‌های با صادرکننده و دریافت‌کننده یکسان
+            const personMap = new Map();
+            
+            checks.forEach(check => {
+                if (check.issuer === check.receiver) {
+                    if (!personMap.has(check.issuer)) {
+                        personMap.set(check.issuer, {
+                            checks: [],
+                            totalAmount: 0
+                        });
+                    }
+                    
+                    const personData = personMap.get(check.issuer);
+                    personData.checks.push(check);
+                    personData.totalAmount += check.amount;
+                }
+            });
+            
+            // نمایش آمار شخص با بیشترین چک (اگر وجود داشته باشد)
+            if (personMap.size > 0) {
+                let maxPerson = '';
+                let maxChecks = 0;
+                
+                personMap.forEach((data, person) => {
+                    if (data.checks.length > maxChecks) {
+                        maxPerson = person;
+                        maxChecks = data.checks.length;
+                    }
+                });
+                
+                const personData = personMap.get(maxPerson);
+                
+                // محاسبه میانگین پس‌انداز ماهانه
+                let monthlySavings = 0;
+                
+                if (personData.checks.length > 0) {
+                    const today = new Date();
+                    let totalMonths = 0;
+                    
+                    personData.checks.forEach(check => {
+                        const checkDate = new Date(check.date);
+                        const monthsDiff = (checkDate.getFullYear() - today.getFullYear()) * 12 + 
+                                          (checkDate.getMonth() - today.getMonth());
+                        
+                        if (monthsDiff > 0) {
+                            totalMonths += monthsDiff;
+                        }
+                    });
+                    
+                    if (totalMonths > 0) {
+                        monthlySavings = Math.ceil(personData.totalAmount / totalMonths);
+                    } else {
+                        monthlySavings = personData.totalAmount;
+                    }
+                }
+                
+                personStats.classList.remove('hidden');
+                document.getElementById('personName').textContent = maxPerson;
+                document.getElementById('personTotalChecks').textContent = toPersianDigits(personData.checks.length);
+                document.getElementById('personTotalAmount').textContent = formatNumber(personData.totalAmount) + ' ریال';
+                document.getElementById('monthlySavings').textContent = formatNumber(monthlySavings) + ' ریال';
+            } else {
+                personStats.classList.add('hidden');
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;
+    if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'94eafdfb06897da6',t:'MTc0OTc0ODU0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+    b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');
+    a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';
+    document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
+    else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);
+        'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+
+</script>
+</body>
+</html>
